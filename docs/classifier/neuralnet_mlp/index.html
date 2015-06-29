@@ -427,22 +427,26 @@ Sebastian Raschka, last updated: 06/24/2015</p>
 <p>from mlxtend.classifier import NeuralNetMLP</p>
 </blockquote>
 <p>Implementation of a feedforward artificial neural network (multilayer perceptron, MLP).
-Although the code is fully working and can be used for common classification tasks, this implementation is not geared towards efficiency but clarity -- the original code was written for demonstration purposes.</p>
-<p><img alt="" src=".././img/neuralnet_mlp_1.png" /></p>
-<p><strong>A fact sheet of the current implementation:</strong></p>
+Although the code is fully working and can be used for common classification tasks, this implementation is not geared towards efficiency but clarity -- the original code was written for demonstration purposes (a more detailed blog article and step by step walkthrough is going to follow).</p>
+<p><img alt="" src=".././img/neuralnet_mlp_1.png" /><br />
+[Note: <em>x</em><sub>0</sub> and <em>a</em><sub>0</sub> are the bias units ( <em>x</em><sub>0</sub>=1, <em>a</em><sub>0</sub>=1); the activation is calculated as   <em>sigmoid(z) = g(z) = 1 / (1+exp(-z))</em>,   where the net input <strong><em>z</em></strong> of the first layer is defined as  <strong><em>z</em></strong><sup>(2)</sup> = <strong>w</strong><sup>(1)</sup><strong><em>a</em></strong><sup>(1)</sup><sup>T</sup>, and the net input of the second layer is defined as  <strong><em>z</em></strong><sup>(3)</sup> = <strong><em>w</em></strong><sup>(2)</sup><strong><em>a</em></strong><sup>(2)</sup>, respectively; <strong><em>w</em></strong><sup>(k)</sup> are the weight matrices of the corresponding layers; <strong><em>a</em></strong><sup>(1)</sup> is equal to the input features plus bias unit, <strong><em>a</em></strong><sup>(1)</sup> = [1,  <strong><em>x</em></strong> ]]</p>
+<p><br>
+<strong>A fact sheet of the current implementation:</strong></p>
 <ul>
 <li>Binary and multi-class classification</li>
 <li>1 input layer, 1 hidden layer, 1 output layer</li>
 <li>logistic (sigmoid) activation functions (see the activation function <a href="http://nbviewer.ipython.org/github/rasbt/pattern_classification/blob/master/machine_learning/neural_networks/ipynb/activation_functions.ipynb">cheatsheet</a>)</li>
 <li>learning via batch gradient descent or mini-batch gradient descent using the <a href="https://en.wikipedia.org/?title=Backpropagation">backpropagation</a> algorithm</li>
 <li>optional L1 and/or L2 regularization (penalty)</li>
-<li>Currently only constant learning rate </li>
+<li>Momentum learning: &Delta;<strong>w</strong><sub>t</sub>= -&eta;  &nabla;<sub><strong>w</strong></sub>E(<strong>w</strong>) + &alpha; &Delta;<strong>w</strong><sub>t-1</sub> (where &alpha; and &eta;  are the momentum constant and  the learning rate, respectively)</li>
+<li>Adaptive learning rate: &eta; / (1 + <em>t</em> &times; <em>d</em>), where <em>d</em> is the decrease constant. </li>
 </ul>
 <p><strong>For more details, please see the <a href="https://github.com/rasbt/mlxtend/blob/master/mlxtend/classifier/neuralnet_mlp.py">source code</a>.</strong></p>
 <p><br>
 <br>
 <hr></p>
 <h3 id="example-1-classify-iris">Example 1 - Classify Iris</h3>
+<p>[An IPython notebook to execute those examples can be found <a href="http://nbviewer.ipython.org/github/rasbt/mlxtend/blob/master/docs/examples/classifier_nn_mlp.ipynb">here</a>]</p>
 <p>Load 2 features from Iris (petal length and petal width) for visualization purposes.</p>
 <pre><code>from mlxtend.data import iris_data
 X, y = iris_data()
@@ -452,15 +456,16 @@ X = X[:, 2:]
 <pre><code>&gt;&gt;&gt; from mlxtend.classifier import NeuralNetMLP
 &gt;&gt;&gt; import numpy as np
 &gt;&gt;&gt; nn1 = NeuralNetMLP(n_output=3, 
-     ... n_features=X.shape[1], 
-     ... n_hidden=30, 
-     ... l2=0.0, 
-     ... l1=0.0, 
-     ... epochs=5000, 
-     ... eta=0.001, 
-     ... minibatches=1, 
-     ... shuffle=True,
-     ... random_state=1)
+...     n_features=X.shape[1], 
+...     n_hidden=30, 
+...     l2=0.0, 
+...     l1=0.0, 
+...     epochs=5000, 
+...     eta=0.001, 
+...     alpha=0.1,
+...     minibatches=1, 
+...     shuffle=True,
+...     random_state=1)
 &gt;&gt;&gt; nn1.fit(X, y)
 &gt;&gt;&gt; y_pred = nn1.predict(X)
 &gt;&gt;&gt; acc = np.sum(y == y_pred, axis=0) / X.shape[0]
@@ -479,8 +484,28 @@ Accuracy: 96.00%
 <p><strong>Note:</strong> In practice, it is recommended to standardize the features for faster and smoother convergence.</p>
 <pre><code>&gt;&gt;&gt; X_std = np.copy(X)
 &gt;&gt;&gt; for i in range(2):
-    &gt;&gt;&gt; X_std[:,i] = (X[:,i] - X[:,i].mean()) / X[:,i].std()
+...     X_std[:,i] = (X[:,i] - X[:,i].mean()) / X[:,i].std()
+
+&gt;&gt;&gt; nn2 = NeuralNetMLP(n_output=3, 
+...     n_features=X_std.shape[1], 
+...     n_hidden=30, 
+...     l2=0.0, 
+...     l1=0.0, 
+...     epochs=1000, 
+...     eta=0.05,
+...     alpha=0.1,
+...     minibatches=1, 
+...     shuffle=True,
+...     random_state=1)
 </code></pre>
+<p><br></p>
+<pre><code>&gt;&gt;&gt; nn2.fit(X_std, y)
+&gt;&gt;&gt; y_pred = nn2.predict(X_std)
+&gt;&gt;&gt; acc = np.sum(y == y_pred, axis=0) / X_std.shape[0]
+&gt;&gt;&gt; print('Accuracy: %.2f%%' % (acc * 100))
+Accuracy: 96.00%
+</code></pre>
+<p><img alt="" src=".././img/neuralnet_mlp_7.png" /></p>
 <p>Visualize the decision regions:</p>
 <pre><code>&gt;&gt;&gt; from mlxtend.evaluate import plot_decision_regions
 &gt;&gt;&gt; plot_decision_regions(X, y, clf=nn1)
@@ -493,6 +518,7 @@ Accuracy: 96.00%
 <br>
 <hr></p>
 <h3 id="example-2-classify-handwritten-digits-from-mnist">Example 2 - Classify handwritten digits from MNIST</h3>
+<p>[An IPython notebook to execute those examples can be found <a href="http://nbviewer.ipython.org/github/rasbt/mlxtend/blob/master/docs/examples/classifier_nn_mlp.ipynb">here</a>]</p>
 <p>Load a 5000-sample subset of the <a href="http://rasbt.github.io/mlxtend/docs/data/mnist/">MNIST dataset</a> (please see <a href="http://nbviewer.ipython.org/github/rasbt/pattern_classification/blob/master/data_collecting/reading_mnist.ipynb">this tutorial</a> if you want to download and read in the complete MNIST dataset).</p>
 <pre><code>&gt;&gt;&gt; from mlxtend.data import mnist_data
 &gt;&gt;&gt; X, y = mnist_data()
@@ -521,7 +547,7 @@ Accuracy: 96.00%
 Epoch: 300/300
 &gt;&gt;&gt; y_pred = nn.predict(X)
 &gt;&gt;&gt; print('Accuracy: %.2f%%' % (acc * 100))
-... Accuracy: 94.86%
+Accuracy: 95.48%
 </code></pre>
 <p>Check for convergence.</p>
 <pre><code>&gt;&gt;&gt; plt.plot(range(len(nn.cost_)), nn.cost_)
@@ -571,6 +597,16 @@ Epoch: 300/300
 
     eta : float (default: 0.01)
       Learning rate.
+
+    alpha : float (default: 0.0)
+      Momentum constant. Factor multiplied with the
+      gradient of the previous epoch t-1 to improve
+      learning speed
+      w(t) := w(t) - (grad(t) + alpha*grad(t-1))
+
+    decrease_const : float (default: 0.0)
+      Decrease constant. Shrinks the learning rate
+      after each epoch via eta / (1 + epoch*decrease_const)
 
     shuffle : bool (default: False)
       Shuffles training data every epoch if True to prevent circles.
